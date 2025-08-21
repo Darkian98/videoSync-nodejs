@@ -1,33 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>MAIN PRINCIPAL</title>
+    <meta charset="UTF-8">
+    <title>MAIN PRINCIPAL</title>
 </head>
+
 <body>
-  <h1>Video SSE Sync / MAIN PRINCIPAL</h1>
-  <video id="video" width="640" controls>
-    <source src="/video.mp4" type="video/mp4">
-    Tu navegador no soporta video HTML5.
-  </video>
+    <h1>Video SSE Sync / MAIN PRINCIPAL</h1>
+    <video id="video" width="640" controls>
+        <source src="/video.mp4" type="video/mp4">
+        Tu navegador no soporta video HTML5.
+    </video>
+    <h1>Crear Sala de Video</h1>
+    <!-- <button id="createBtn">Generar Sala</button> -->
+    <div id="qrcode"></div>
+    <a id="url" target="_blank"></a>
+    <script>
+        const video = document.getElementById("video");
+        const path = window.location.pathname;
+        const roomId = path.split("/").pop();
+        // Función para enviar POST al servidor
+        const sendAction = async (action) => {
+            await fetch(`http://localhost:8080/sync/${roomId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action, time: video.currentTime })
+            });
+        };
 
-  <script>
-    const video = document.getElementById("video");
-    const roomId = "video123";
+        // Detectar play/pause y enviar acción
+        video.addEventListener("play", () => sendAction("play"));
+        video.addEventListener("pause", () => sendAction("pause"));
+        video.addEventListener("seeked", () => sendAction("seek"));
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script>
+        const createBtn = document.getElementById("createBtn");
+        const qrContainer = document.getElementById("qrcode");
+        const urlEl = document.getElementById("url");
 
-    // Función para enviar POST al servidor
-    const sendAction = async (action) => {
-      await fetch(`http://localhost:8080/sync/${roomId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, time: video.currentTime })
-      });
-    };
+        qrContainer.innerHTML = ""; // limpiar
+        const canvas = document.createElement("canvas");
+        qrContainer.appendChild(canvas);
+        const url = `${window.location.origin}/client/room/${roomId}`;
+        QRCode.toCanvas(canvas, url, { width: 200 }, function (error) {
+            if (error) console.error(error);
+        });
+        urlEl.href = url;
+        urlEl.textContent = url;
+        // createBtn.addEventListener("click", () => {
+        //     const path = window.location.pathname;
+        //     const roomId = path.split("/").pop();
+        //     if (!roomId) return alert("Ingresa un nombre de sala");
 
-    // Detectar play/pause y enviar acción
-    video.addEventListener("play", () => sendAction("play"));
-    video.addEventListener("pause", () => sendAction("pause"));
-    video.addEventListener("seeked", () => sendAction("seek"));
-  </script>
+        //     const url = `${window.location.origin}/room/${roomId}`;
+        //     console.log('url', url)
+        //     qrContainer.innerHTML = "";
+        //     QRCode.toCanvas(qrContainer, url, { width: 200 }, function (error) {
+        //         if (error) console.error(error);
+        //     });
+        // });
+    </script>
 </body>
+
 </html>

@@ -5,35 +5,132 @@
     <meta charset="UTF-8">
     <title>Video SSE Sync</title>
 </head>
+<style>
+    body,
+    html {
+        margin: 0;
+        height: 100%;
+        font-family: sans-serif;
+    }
+
+    #splash {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+    }
+
+    #video-container {
+        display: none;
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    button {
+        padding: 10px 20px;
+        font-size: 18px;
+        cursor: pointer;
+    }
+</style>
 
 <body>
     <h1>Video SSE Sync / Client</h1>
-    <video id="video" width="640" controlsList="nodownload nofullscreen noremoteplayback" 
-  disableRemotePlayback>
-        <source src="video.mp4" type="video/mp4">
-        Tu navegador no soporta video HTML5.
-    </video>
+
+    <!-- Splash screen -->
+    <div id="splash">
+        <h2>Bienvenido a la sala</h2>
+        <button id="enterBtn">Entrar</button>
+    </div>
+
+    <div id="video-container">
+        <video id="video" width="640" playsinline controlsList="nodownload nofullscreen noremoteplayback" disableRemotePlayback></video>
+        <br>
+        <button id="togglePlay">Pausa</button>
+        <p>Compartir sala: <a id="url" target="_blank"></a></p>
+    </div>
 
     <script>
+        const path = window.location.pathname;
+        const roomId = path.split("/").pop();
         const video = document.getElementById("video");
-        const roomId = "video123";
+        const toggleBtn = document.getElementById("togglePlay");
+        const videoContainer = document.getElementById("video-container");
+        const splash = document.getElementById("splash");
+        const enterBtn = document.getElementById("enterBtn");
+        const msg = document.getElementById("msg");
+        const urlEl = document.getElementById("url");
 
-        // Conectarse al SSE
+        // URL de la sala
+        const roomUrl = `${window.location.origin}${path}`;
+        urlEl.href = roomUrl;
+        urlEl.textContent = roomUrl;
+
+        let currentTime = 0;
+        let isPlaying = false;
+        let videoReady = false;
+
+        // SSE
         const es = new EventSource(`http://localhost:8080/sync/events/${roomId}`);
         es.onmessage = (event) => {
             const { action, time } = JSON.parse(event.data);
-            console.log("Evento recibido:", action, time);
+            currentTime = time;
+            isPlaying = action === "play";
 
-            if (action === "play") {
-                video.currentTime = time;
-                video.play();
-            } else if (action === "pause") {
-                video.currentTime = time;
-                video.pause();
-            } else if (action === "seek") {
-                video.currentTime = time;
+
+            // Aplicar cambios al video si ya está visible
+            if (videoReady) {
+                video.currentTime = currentTime;
+                if (action === "play") {
+                    video.play();
+                    toggleBtn.textContent = "Pausa";
+                } else if (action === "pause") {
+                    video.pause();
+                    toggleBtn.textContent = "Reproducir";
+                }
             }
         };
+
+        // Función para enviar acciones al servidor
+        const sendAction = async (action) => {
+            await fetch(`http://localhost:8080/sync/${roomId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action, time: video.currentTime })
+            });
+        };
+
+        // Botón de pausa/reproducir
+        toggleBtn.addEventListener("click", () => {
+            if (video.paused) {
+                video.play();
+                toggleBtn.textContent = "Pausa";
+                sendAction("play");
+            } else {
+                video.pause();
+                toggleBtn.textContent = "Reproducir";
+                sendAction("pause");
+            }
+        });
+
+        // Al entrar, mostramos video con controles intactos y aplicamos estado
+        enterBtn.addEventListener("click", () => {
+            splash.style.display = "none";
+            videoContainer.style.display = "block";
+            video.src = "/video.mp4"; // tu video en la raíz
+            video.currentTime = currentTime;
+            toggleBtn.textContent = isPlaying ? "Pausa" : "Reproducir";
+
+            if (isPlaying) video.play();
+            videoReady = true;
+        });
     </script>
 </body>
 

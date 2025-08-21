@@ -25,6 +25,9 @@ try {
 	app.get("/room/:roomId", (req, res) => {
 		res.sendFile(path.join(__dirname, "../main.html"));
 	});
+	app.get("/client/room/:roomId", (req, res) => {
+		res.sendFile(path.join(__dirname, "../client.html"));
+	});
 
 	app.listen(port, () => {
 		console.log(`Server is running at http://${host}:${port}`);
