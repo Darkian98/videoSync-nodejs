@@ -10,9 +10,9 @@
     "start": "NODE_PATH=./build node build/index.js",
     "start:dev": "nodemon src/index.ts --exec ts-node",
     "prod": "pm2 start build/index.js",
-    "docker:build": "docker build . -t videoSync",
-    "docker:run": "docker run -d --restart=on-failure -p 8080:8080 videoSync",
-    "docker:dev": "docker build . -t videoSync && docker run -d --restart=on-failure -p 8080:8080 videoSync",
+    "docker:build": "docker build . -t videosync",
+    "docker:run": "docker run -d --restart=on-failure -p 8080:8080 videosync",
+    "docker:dev": "docker build . -t videosync && docker run -d --restart=on-failure -p 8080:8080 videosync",
     "format": "prettier --write .",
     "lint": "eslint .",
     "type-check": "tsc --noEmit --skipLibCheck"
