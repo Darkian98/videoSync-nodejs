@@ -1,0 +1,1 @@
+export const rooms: Map<number, any[]> = new Map();

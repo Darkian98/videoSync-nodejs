@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Video SSE Sync</title>
+</head>
+
+<body>
+    <h1>Video SSE Sync / Client</h1>
+    <video id="video" width="640" controlsList="nodownload nofullscreen noremoteplayback" 
+  disableRemotePlayback>
+        <source src="video.mp4" type="video/mp4">
+        Tu navegador no soporta video HTML5.
+    </video>
+
+    <script>
+        const video = document.getElementById("video");
+        const roomId = "video123";
+
+        // Conectarse al SSE
+        const es = new EventSource(`http://localhost:8080/sync/events/${roomId}`);
+        es.onmessage = (event) => {
+            const { action, time } = JSON.parse(event.data);
+            console.log("Evento recibido:", action, time);
+
+            if (action === "play") {
+                video.currentTime = time;
+                video.play();
+            } else if (action === "pause") {
+                video.currentTime = time;
+                video.pause();
+            } else if (action === "seek") {
+                video.currentTime = time;
+            }
+        };
+    </script>
+</body>
+
+</html>

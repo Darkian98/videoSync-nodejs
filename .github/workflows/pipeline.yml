@@ -1,0 +1,42 @@
+name: CI/CD Pipeline
+run-name: Deploy to develop by @${{ github.actor }} => @${{ github.event_name }}
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  continuous-deployment-ireland:
+    environment: dev
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_PRE }}
+      AWS_ECR_URL: ${{ vars.AWS_ECR_URL }}
+      AWS_REGION_NAME: ${{ vars.AWS_REGION_NAME }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Install dependencies
+        run: npm i
+
+      - name: Create docker images
+        run: docker build -t $AWS_ECR_URL:latest-dev .
+
+      - name: Upload docker into ECR
+        run: docker push $AWS_ECR_URL:latest-dev
